@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+
+<html lang="sk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#D32027" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tatrakon" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Tatrakon Retail</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23D32027' rx='20'/%3E%3Ctext x='50' y='62' font-family='Arial' font-size='30' font-weight='bold' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23D32027' rx='20'/%3E%3Ctext x='50' y='62' font-family='Arial' font-size='30' font-weight='bold' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #f5f5f7;
+    color: #1a1a1a;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f5f7;
+    --color-background-tertiary: #ebebee;
+    --color-background-info: #E6F1FB;
+    --color-background-success: #E1F5EE;
+    --color-background-warning: #FAEEDA;
+    --color-background-danger: #FCEBEB;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #555;
+    --color-text-tertiary: #888;
+    --color-text-info: #0C447C;
+    --color-text-success: #0F6E56;
+    --color-text-warning: #854F0B;
+    --color-text-danger: #A32D2D;
+    --color-border-tertiary: rgba(0,0,0,0.08);
+    --color-border-secondary: rgba(0,0,0,0.15);
+    --color-border-primary: rgba(0,0,0,0.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1e1e20;
+      --color-background-secondary: #161618;
+      --color-background-tertiary: #0f0f10;
+      --color-background-info: #042C53;
+      --color-background-success: #04342C;
+      --color-background-warning: #412402;
+      --color-background-danger: #501313;
+      --color-text-primary: #f5f5f7;
+      --color-text-secondary: #aaa;
+      --color-text-tertiary: #777;
+      --color-text-info: #85B7EB;
+      --color-text-success: #5DCAA5;
+      --color-text-warning: #EF9F27;
+      --color-text-danger: #F09595;
+      --color-border-tertiary: rgba(255,255,255,0.1);
+      --color-border-secondary: rgba(255,255,255,0.2);
+      --color-border-primary: rgba(255,255,255,0.3);
+    }
+    body { background: #0f0f10; color: #f5f5f7; }
+  }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; background: var(--color-background-primary); color: var(--color-text-primary); }
+  #app-root {
+    font-family: inherit;
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--color-background-secondary);
+    min-height: 100vh;
+    box-shadow: 0 0 40px rgba(0,0,0,0.05);
+  }
+  @media (max-width: 680px) {
+    #app-root { box-shadow: none; }
+  }
+  .ti { font-style: normal; }
+  input[type="checkbox"] { cursor: pointer; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+  .install-banner {
+    background: #D32027; color: white; padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 12px;
+  }
+  .install-banner button { background: rgba(255,255,255,0.25); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; }
+  .install-banner .close { background: transparent; padding: 4px 8px; }
+</style>
+</head>
+<body>
+
+<div id="app-root">
+  <div id="install-prompt" style="display: none;"></div>
+  <div id="screen-container"></div>
+</div>
+
+<script>
+(function() {
+  const TR = '#D32027';
+  const TR_DARK = '#A31820';
+  const TR_LIGHT = '#FCEBEB';
+  const STORAGE_KEY = 'tatrakon-app-v3';
+
+  const DEFAULT_STORES = [
+    { id: 's1', name: 'Tesco Bratislava Lamač', address: 'Lamačská cesta 6, Bratislava', lat: 48.1936, lng: 17.0593 },
+    { id: 's2', name: 'Kaufland Žilina', address: 'Vysokoškolákov 52, Žilina', lat: 49.2194, lng: 18.7408 },
+    { id: 's3', name: 'Billa Košice', address: 'Hlavná 68, Košice', lat: 48.7164, lng: 21.2611 },
+    { id: 's4', name: 'Lidl Nitra', address: 'Štúrova 71, Nitra', lat: 48.3069, lng: 18.0866 },
+    { id: 's5', name: 'COOP Jednota Námestovo', address: 'Hviezdoslavovo nám. 1, Námestovo', lat: 49.4081, lng: 19.4811 },
+    { id: 's6', name: 'Tesco Banská Bystrica', address: 'Zvolenská cesta 8, B. Bystrica', lat: 48.7395, lng: 19.1535 }
+  ];
+  const DEFAULT_PRODUCTS = ['Tatranky oriešková', 'Tatranky kakaová', 'Tatranky mliečna', 'Kávenky', 'Horalky', 'Mila rezy'];
+  const DEFAULT_USERS = [
+    { id: 'admin', name: 'Admin', pin: '0000', role: 'admin' },
+    { id: 'u1', name: 'Ján Novák', pin: '1111', role: 'employee' },
+    { id: 'u2', name: 'Mária Kováčová', pin: '2222', role: 'employee' },
+    { id: 'u3', name: 'Peter Horváth', pin: '3333', role: 'employee' }
+  ];
+
+  let state = {
+    currentUser: null,
+    currentScreen: 'login',
+    selectedDay: new Date().getDay() || 7,
+    activeVisit: null,
+    plans: {},
+    visits: [],
+    stores: [...DEFAULT_STORES],
+    users: [...DEFAULT_USERS],
+    products: [...DEFAULT_PRODUCTS],
+    settings: { gpsRadius: 100, gpsEnabled: true },
+    memos: [],
+    notes: [],
+    adminTab: 'overview',
+    employeeTab: 'home',
+    pinSelectedUser: null,
+    chartInstance: null,
+    selectedMonth: new Date().toISOString().slice(0,7),
+    editingMemoId: null
+  };
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        Object.assign(state, {
+          plans: parsed.plans || {},
+          visits: parsed.visits || [],
+          stores: parsed.stores || [...DEFAULT_STORES],
+          users: parsed.users || [...DEFAULT_USERS],
+          products: parsed.products || [...DEFAULT_PRODUCTS],
+          settings: parsed.settings || { gpsRadius: 100, gpsEnabled: true },
+          memos: parsed.memos || [],
+          notes: parsed.notes || []
+        });
+      }
+    } catch (e) { console.warn('Load error:', e); }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        plans: state.plans, visits: state.visits, stores: state.stores,
+        users: state.users, products: state.products, settings: state.settings,
+        memos: state.memos, notes: state.notes
+      }));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        alert('Lokálne úložisko je plné. Vymažte staré návštevy alebo fotky.');
+      }
+    }
+  }
+
+  function render() {
+    if (state.chartInstance) { try { state.chartInstance.destroy(); } catch(e){} state.chartInstance = null; }
+    const c = document.getElementById('screen-container');
+    if (state.currentScreen === 'login') c.innerHTML = renderLogin();
+    else if (state.currentScreen === 'admin') c.innerHTML = renderAdmin();
+    else if (state.currentScreen === 'employee') c.innerHTML = renderEmployee();
+    else if (state.currentScreen === 'visit') c.innerHTML = renderVisit();
+    else if (state.currentScreen === 'visit-detail') c.innerHTML = renderVisitDetail();
+    else if (state.currentScreen === 'memo-editor') c.innerHTML = renderMemoEditor();
+    attachHandlers();
+    if (state.currentScreen === 'admin' && state.adminTab === 'stats') setTimeout(() => drawAdminChart(), 100);
+    if (state.currentScreen === 'employee' && state.employeeTab === 'stats') setTimeout(() => drawEmployeeChart(), 100);
+    window.scrollTo(0, 0);
+  }
+
+  function header(title, showBack, subtitle) {
+    return `
+      <div style="background: ${TR}; color: white; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          ${showBack ? '<button data-action="back" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="ti ti-arrow-left" style="font-size: 18px;"></i></button>' : ''}
+          <div style="min-width: 0;">
+            <div style="font-size: 10px; opacity: 0.85; letter-spacing: 1.5px;">TATRAKON ${subtitle || ''}</div>
+            <div style="font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</div>
+          </div>
+        </div>
+        ${state.currentUser ? `<button data-action="logout" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; flex-shrink: 0;"><i class="ti ti-logout" style="font-size: 13px; vertical-align: -2px;"></i></button>` : ''}
+      </div>
+    `;
+  }
+
+  function tabBar(tabs, current, actionName) {
+    return `
+      <div style="display: flex; background: var(--color-background-primary); border-bottom: 1px solid var(--color-border-tertiary); padding: 0 4px; overflow-x: auto; position: sticky; top: 56px; z-index: 99;">
+        ${tabs.map(t => {
+          const hasBadge = t.badge && t.badge > 0;
+          return `
+            <button data-action="${actionName}" data-tab="${t.id}" style="flex: 1; min-width: 64px; padding: 9px 4px; background: transparent; border: none; cursor: pointer; border-bottom: 2px solid ${current === t.id ? TR : 'transparent'}; color: ${current === t.id ? TR : 'var(--color-text-secondary)'}; font-size: 10px; font-weight: ${current === t.id ? 500 : 400}; display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative;">
+              <i class="ti ti-${t.icon}" style="font-size: 16px;"></i>
+              <span>${t.label}</span>
+              ${hasBadge ? `<span style="position: absolute; top: 4px; right: 12px; background: ${TR}; color: white; font-size: 9px; min-width: 14px; height: 14px; border-radius: 7px; display: flex; align-items: center; justify-content: center; padding: 0 3px; font-weight: 500;">${t.badge}</span>` : ''}
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderLogin() {
+    return `
+      ${header('Prihlásenie', false, '· RETAIL')}
+      <div style="padding: 24px 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="display: inline-block; background: ${TR}; color: white; padding: 10px 22px; border-radius: 10px; font-weight: 500; letter-spacing: 2px; font-size: 18px;">TATRAKON</div>
+          <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 6px;">Retail · Tradícia od 1931</div>
+        </div>
+        <div style="background: var(--color-background-primary); border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 500; margin-bottom: 10px; color: var(--color-text-secondary);">Vyber svoje meno:</div>
+          <div style="display: grid; gap: 6px;">
+            ${state.users.map(u => `
+              <button data-action="select-user" data-user-id="${u.id}" style="text-align: left; padding: 10px 14px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: ${u.role === 'admin' ? TR : TR_LIGHT}; color: ${u.role === 'admin' ? 'white' : TR_DARK}; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 12px;">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 500; font-size: 13px;">${u.name}</div>
+                  <div style="font-size: 10px; color: var(--color-text-secondary);">${u.role === 'admin' ? 'Administrátor' : 'Merchandiser'}</div>
+                </div>
+                <i class="ti ti-chevron-right" style="font-size: 14px; color: var(--color-text-tertiary);"></i>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        <div id="pin-section" style="display: none; background: var(--color-background-primary); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 12px; font-weight: 500; margin-bottom: 10px;">PIN pre <span id="pin-user-name"></span>:</div>
+          <input type="password" id="pin-input" maxlength="4" placeholder="••••" inputmode="numeric" style="width: 100%; padding: 12px; font-size: 22px; text-align: center; letter-spacing: 10px; border: 1px solid var(--color-border-secondary); border-radius: 8px; margin-bottom: 10px;" />
+          <button data-action="submit-pin" style="width: 100%; padding: 12px; background: ${TR}; color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 14px;">Prihlásiť sa</button>
+          <div id="pin-error" style="color: ${TR}; font-size: 11px; margin-top: 6px; text-align: center; min-height: 14px;"></div>
+          <div style="font-size: 10px; color: var(--color-text-tertiary); margin-top: 8px; text-align: center;">Demo PIN: Admin 0000 · Ján 1111 · Mária 2222 · Peter 3333</div>
+        </div>
+        <div style="text-align: center; font-size: 10px; color: var(--color-text-tertiary); margin-top: 16px;">v1.0 · ${new Date().getFullYear()}</div>
+      </div>
+    `;
+  }
+
+  function getCurrentMonthMemos() {
+    const m = new Date().toISOString().slice(0,7);
+    return state.memos.filter(memo => memo.month === m);
+  }
+
+  function renderAdmin() {
+    const currentMemos = getCurrentMonthMemos();
+    const tabs = [
+      { id: 'overview', icon: 'layout-dashboard', label: 'Prehľad' },
+      { id: 'memo', icon: 'speakerphone', label: 'Memo', badge: currentMemos.length },
+      { id: 'stats', icon: 'chart-bar', label: 'Štatistiky' },
+      { id: 'photos', icon: 'photo', label: 'Fotky' },
+      { id: 'manage', icon: 'settings', label: 'Správa' }
+    ];
+    return `
+      ${header('Admin Dashboard', false, '· ADMIN')}
+      ${tabBar(tabs, state.adminTab, 'admin-tab')}
+      <div style="padding: 16px;">
+        ${state.adminTab === 'overview' ? renderAdminOverview() : ''}
+        ${state.adminTab === 'memo' ? renderAdminMemo() : ''}
+        ${state.adminTab === 'stats' ? renderAdminStats() : ''}
+        ${state.adminTab === 'photos' ? renderAdminPhotos() : ''}
+        ${state.adminTab === 'manage' ? renderAdminManage() : ''}
+      </div>
+    `;
+  }
+
+  function renderAdminOverview() {
+    const totalVisits = state.visits.length;
+    const todayVisits = state.visits.filter(v => isToday(v.endTime)).length;
+    const weekVisits = state.visits.filter(v => isThisWeek(v.endTime)).length;
+    const avgDuration = totalVisits > 0 ? Math.round(state.visits.reduce((s,v) => s + v.duration, 0) / totalVisits / 60) : 0;
+    const employees = state.users.filter(u => u.role === 'employee').map(u => {
+      const uv = state.visits.filter(v => v.userId === u.id);
+      return { ...u, total: uv.length, week: uv.filter(v => isThisWeek(v.endTime)).length, today: uv.filter(v => isToday(v.endTime)).length, last: uv.length > 0 ? uv[uv.length-1] : null, totalTime: Math.round(uv.reduce((s,v)=>s+v.duration,0)/60) };
+    });
+    const currentMemos = getCurrentMonthMemos();
+    const monthName = new Date().toLocaleDateString('sk-SK', { month: 'long', year: 'numeric' });
+
+    return `
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px;">
+        ${statCard('Dnes', todayVisits, 'návštev')}
+        ${statCard('Týždeň', weekVisits, 'návštev')}
+        ${statCard('Celkom', totalVisits, 'návštev')}
+        ${statCard('Priemer', avgDuration, 'minút')}
+      </div>
+
+      ${currentMemos.length > 0 ? `
+        <div style="background: ${TR_LIGHT}; border-radius: 10px; padding: 12px; margin-bottom: 12px; border-left: 3px solid ${TR}; border-top-left-radius: 0; border-bottom-left-radius: 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px; color: ${TR_DARK};">
+              <i class="ti ti-speakerphone" style="font-size: 14px;"></i>
+              <div style="font-weight: 500; font-size: 12px;">Aktívne akcie · ${monthName}</div>
+            </div>
+            <button data-action="admin-tab" data-tab="memo" style="background: ${TR}; color: white; border: none; padding: 3px 8px; border-radius: 5px; font-size: 10px; cursor: pointer;">Spravovať</button>
+          </div>
+          <div style="font-size: 11px; color: ${TR_DARK};">${currentMemos.length} aktívnych mesačných akcií pre zamestnancov</div>
+        </div>
+      ` : ''}
+
+      <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <i class="ti ti-users" style="font-size: 16px; color: ${TR};"></i>
+            <div style="font-weight: 500; font-size: 13px;">Aktivita zamestnancov</div>
+          </div>
+          <button data-action="export-csv" style="background: ${TR_LIGHT}; color: ${TR_DARK}; border: none; padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;"><i class="ti ti-download" style="font-size: 12px;"></i> Export CSV</button>
+        </div>
+        <div style="display: grid; gap: 6px;">
+          ${employees.map(e => `
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 8px;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: ${TR_LIGHT}; color: ${TR_DARK}; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 11px;">${e.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500; font-size: 12px;">${e.name}</div>
+                <div style="font-size: 10px; color: var(--color-text-secondary);">Dnes: ${e.today} · Týždeň: ${e.week} · Spolu: ${e.total} (${e.totalTime} min)</div>
+              </div>
+              <div style="text-align: right; font-size: 10px; color: var(--color-text-tertiary);">${e.last ? formatRelative(e.last.endTime) : 'Žiadna'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+          <i class="ti ti-clock" style="font-size: 16px; color: ${TR};"></i>
+          <div style="font-weight: 500; font-size: 13px;">Posledné návštevy</div>
+        </div>
+        ${state.visits.length === 0 ? `<div style="text-align: center; padding: 16px; color: var(--color-text-tertiary); font-size: 11px;">Zatiaľ žiadne návštevy.</div>` : `
+          <div style="display: grid; gap: 4px;">
+            ${state.visits.slice(-6).reverse().map(v => {
+              const u = state.users.find(x => x.id === v.userId);
+              const s = state.stores.find(x => x.id === v.storeId);
+              const found = v.checklist ? Object.values(v.checklist).filter(x=>x).length : 0;
+              const total = v.checklist ? Object.keys(v.checklist).length : 0;
+              return `
+                <button data-action="view-visit" data-visit-id="${v.id}" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 6px; border: none; cursor: pointer; text-align: left; width: 100%;">
+                  <i class="ti ti-circle-check" style="font-size: 14px; color: var(--color-text-success);"></i>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 11px; font-weight: 500;">${s ? s.name : '?'} · ${u ? u.name.split(' ')[0] : '?'}</div>
+                    <div style="font-size: 10px; color: var(--color-text-tertiary);">${formatRelative(v.endTime)} · ${Math.round(v.duration/60)}min · ${found}/${total} produktov ${v.photo ? '· 📸' : ''}</div>
+                  </div>
+                  <i class="ti ti-chevron-right" style="font-size: 12px; color: var(--color-text-tertiary);"></i>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  function renderAdminMemo() {
+    const monthName = formatMonth(state.selectedMonth);
+    const monthMemos = state.memos.filter(m => m.month === state.selectedMonth);
+    const currentMonth = new Date().toISOString().slice(0,7);
+    const months = getMonthOptions();
+
+    return `
+      <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+            <i class="ti ti-speakerphone" style="font-size: 16px; color: ${TR};"></i>
+            <div style="font-weight: 500; font-size: 13px;">Mesačné akcie · memo</div>
+          </div>
+          <button data-action="new-memo" style="background: ${TR}; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap;"><i class="ti ti-plus" style="font-size: 12px;"></i> Nová akcia</button>
+        </div>
+
+        <select data-action="select-month" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--color-border-secondary); font-size: 12px; margin-bottom: 10px;">
+          ${months.map(m => `<option value="${m.value}" ${m.value === state.selectedMonth ? 'selected' : ''}>${m.label} ${m.value === currentMonth ? '(aktuálny)' : ''}</option>`).join('')}
+        </select>
+
+        ${monthMemos.length === 0 ? `
+          <div style="text-align: center; padding: 24px; color: var(--color-text-tertiary); font-size: 12px;">
+            <i class="ti ti-clipboard-text" style="font-size: 28px; opacity: 0.3;"></i><br>
+            Žiadne akcie pre ${monthName}.<br>
+            <span style="font-size: 10px;">Klikni "Nová akcia" a zadaj úlohu pre zamestnancov.</span>
+          </div>
+        ` : `
+          <div style="display: grid; gap: 8px;">
+            ${monthMemos.map(m => {
+              const priorityColor = m.priority === 'high' ? TR : m.priority === 'medium' ? '#EF9F27' : '#888780';
+              const priorityLabel = m.priority === 'high' ? 'Vysoká' : m.priority === 'medium' ? 'Stredná' : 'Nízka';
+              const priorityBg = m.priority === 'high' ? TR_LIGHT : m.priority === 'medium' ? '#FAEEDA' : '#F1EFE8';
+              const priorityText = m.priority === 'high' ? TR_DARK : m.priority === 'medium' ? '#854F0B' : '#444441';
+              return `
+                <div style="padding: 12px; background: var(--color-background-secondary); border-radius: 8px; border-left: 3px solid ${priorityColor};">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                    <div style="font-weight: 500; font-size: 13px; flex: 1;">${escapeHtml(m.title)}</div>
+                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                      <button data-action="edit-memo" data-memo-id="${m.id}" style="background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; padding: 2px;"><i class="ti ti-edit" style="font-size: 14px;"></i></button>
+                      <button data-action="delete-memo" data-memo-id="${m.id}" style="background: transparent; border: none; color: ${TR}; cursor: pointer; padding: 2px;"><i class="ti ti-trash" style="font-size: 14px;"></i></button>
+                    </div>
+                  </div>
+                  <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 8px; white-space: pre-wrap;">${escapeHtml(m.content)}</div>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                    <span style="background: ${priorityBg}; color: ${priorityText}; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 500;">${priorityLabel} priorita</span>
+                    ${m.targetUsers && m.targetUsers.length > 0 ? `<span style="background: var(--color-background-info); color: var(--color-text-info); padding: 2px 8px; border-radius: 4px; font-size: 10px;"><i class="ti ti-user" style="font-size: 10px;"></i> ${m.targetUsers.length === state.users.filter(u=>u.role==='employee').length ? 'Všetci' : m.targetUsers.length + ' zamestnanci'}</span>` : '<span style="background: var(--color-background-info); color: var(--color-text-info); padding: 2px 8px; border-radius: 4px; font-size: 10px;">Všetci</span>'}
+                    ${m.relatedProducts && m.relatedProducts.length > 0 ? `<span style="background: ${TR_LIGHT}; color: ${TR_DARK}; padding: 2px 8px; border-radius: 4px; font-size: 10px;"><i class="ti ti-package" style="font-size: 10px;"></i> ${m.relatedProducts.length} produkt${m.relatedProducts.length>1?'y':''}</span>` : ''}
+                    <span style="font-size: 10px; color: var(--color-text-tertiary); margin-left: auto;">${formatRelative(m.createdAt)}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+
+      <div style="background: var(--color-background-info); border-radius: 10px; padding: 12px; font-size: 11px; color: var(--color-text-info); display: flex; gap: 8px; align-items: flex-start;">
+        <i class="ti ti-info-circle" style="font-size: 14px; flex-shrink: 0; margin-top: 1px;"></i>
+        <div>Mesačné akcie sa zobrazujú zamestnancom na hlavnej obrazovke a v ich záložke Memo. Použi pre marketingové akcie, ciele pokrytia, špeciálne úlohy alebo upozornenia na nový produkt.</div>
+      </div>
+    `;
+  }
+
+  function renderMemoEditor() {
+    const isNew = !state.editingMemoId;
+    const memo = isNew ? {
+      title: '', content: '', month: new Date().toISOString().slice(0,7),
+      priority: 'medium', targetUsers: [], relatedProducts: []
+    } : state.memos.find(m => m.id === state.editingMemoId) || {};
+    const months = getMonthOptions(true);
+    const employees = state.users.filter(u => u.role === 'employee');
+
+    return `
+      ${header(isNew ? 'Nová akcia' : 'Upraviť akciu', true)}
+      <div style="padding: 16px;">
+        <div style="background: var(--color-background-primary); border-radius: 10px; padding: 16px;">
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-secondary);">Názov akcie *</label>
+            <input type="text" id="memo-title" value="${escapeAttr(memo.title || '')}" placeholder="napr. Akcia Tatranky kakaová 80% pokrytie" style="width: 100%; padding: 10px; border: 1px solid var(--color-border-secondary); border-radius: 6px; font-size: 13px;" />
+          </div>
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-secondary);">Popis / pokyny *</label>
+            <textarea id="memo-content" rows="5" placeholder="Detaily čo majú zamestnanci robiť, sledovať alebo dosiahnuť..." style="width: 100%; padding: 10px; border: 1px solid var(--color-border-secondary); border-radius: 6px; font-size: 12px; resize: vertical;">${escapeHtml(memo.content || '')}</textarea>
+
+```
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-secondary);">Mesiac *</label>
+          <select id="memo-month" style="width: 100%; padding: 8px; border: 1px solid var(--color-border-secondary); border-radius: 6px; font-size: 12px;">
+            ${months.map(m => `<option value="${m.value}" ${m.value === memo.month ? 'selected' : ''}>${m.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-secondary);">Priorita</label>
+          <select id="memo-priority" style="width: 100%; padding: 8px; border: 1px solid var(--color-border-secondary); border-radius: 6px; font-size: 12px;">
+            <option value="low" ${memo.priority === 'low' ? 'selected' : ''}>🟢 Nízka</option>
+            <option value="medium" ${memo.priority === 'medium' ? 'selected' : ''}>🟡 Stredná</option>
+            <option value="high" ${memo.priority === 'high' ? 'selected' : ''}>🔴 Vysoká</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 6px; color: var(--color-text-secondary);">Pre koho (prázdne = všetci)</label>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px;">
+          ${employees.map(u => `
+            <label style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--color-background-secondary); border-radius: 6px; cursor: pointer;">
+              <input type="checkbox" class="memo-user" data-user-id="${u.id}" ${(memo.targetUsers || []).includes(u.id) ? 'checked' : ''} style="accent-color: ${TR};" />
+              <span style="font-size: 11px;">${u.name}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 6px; color: var(--color-text-secondary);">Súvisiace produkty</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+          ${state.products.map(p => {
+            const sel = (memo.relatedProducts || []).includes(p);
+            return `
+              <label style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: ${sel ? TR_LIGHT : 'var(--color-background-secondary)'}; border-radius: 14px; cursor: pointer; border: 1px solid ${sel ? TR : 'transparent'};">
+                <input type="checkbox" class="memo-product" data-product="${escapeAttr(p)}" ${sel ? 'checked' : ''} style="display: none;" />
+                <span style="font-size: 11px; color: ${sel ? TR_DARK : 'var(--color-text-primary)'}; font-weight: ${sel ? 500 : 400};">${sel ? '✓ ' : ''}${p}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
+        <button data-action="cancel-memo" style="padding: 12px; background: var(--color-background-secondary); color: var(--color-text-secondary); border: 1px solid var(--color-border-secondary); border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 12px;">Zrušiť</button>
+        <button data-action="save-memo" style="padding: 12px; background: ${TR}; color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 13px;">${isNew ? 'Vytvoriť akciu' : 'Uložiť zmeny'}</button>
+      </div>
+    </div>
+  </div>
+`;
+```
+
+}
+
+function renderAdminStats() {
+const employees = state.users.filter(u => u.role === ‘employee’);
+const productStats = state.products.map(p => {
+let onShelf = 0, total = 0;
+state.visits.forEach(v => { if (v.checklist && p in v.checklist) { total++; if (v.checklist[p]) onShelf++; } });
+return { name: p, rate: total > 0 ? Math.round(onShelf/total*100) : 0, onShelf, total };
+});
+return `<div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Návštevy za posledných 7 dní</div> <div style="position: relative; height: 200px;"><canvas id="admin-chart" role="img" aria-label="Graf návštev"></canvas></div> </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;"> <i class="ti ti-package" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Produkty na regáloch (% z návštev)</div> </div> <div style="display: grid; gap: 6px;"> ${productStats.map(p =>`
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+<span style="font-weight: 500;">${p.name}</span>
+<span style="color: var(--color-text-secondary);">${p.rate}% (${p.onShelf}/${p.total})</span>
+</div>
+<div style="height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden;">
+<div style="height: 100%; width: ${p.rate}%; background: ${p.rate >= 70 ? '#1D9E75' : p.rate >= 40 ? '#EF9F27' : TR};"></div>
+</div>
+</div>
+`).join('')} </div> </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Rebríček zamestnancov</div> ${employees.map(u => { const uv = state.visits.filter(v => v.userId === u.id); return { u, weekCount: uv.filter(v => isThisWeek(v.endTime)).length, total: uv.length }; }).sort((a,b) => b.weekCount - a.weekCount).map((e, i) => `
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 6px; margin-bottom: 4px;">
+<div style="width: 22px; height: 22px; border-radius: 50%; background: ${i === 0 ? '#EF9F27' : i === 1 ? '#B4B2A9' : i === 2 ? '#D85A30' : TR_LIGHT}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500;">${i+1}</div>
+<div style="flex: 1; font-size: 12px; font-weight: 500;">${e.u.name}</div>
+<div style="font-size: 11px; color: var(--color-text-secondary);">${e.weekCount} týždeň · ${e.total} celkom</div>
+</div>
+`).join('')} </div> `;
+}
+
+function renderAdminPhotos() {
+const photos = state.visits.filter(v => v.photo);
+return `<div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;"> <i class="ti ti-photo" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Galéria fotiek regálov (${photos.length})</div> </div> ${photos.length === 0 ?`<div style="text-align: center; padding: 24px; color: var(--color-text-tertiary); font-size: 12px;">Zatiaľ žiadne fotky.</div>`:`
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+${photos.slice().reverse().map(v => {
+const u = state.users.find(x => x.id === v.userId);
+const s = state.stores.find(x => x.id === v.storeId);
+return `<button data-action="view-visit" data-visit-id="${v.id}" style="background: var(--color-background-secondary); border: none; border-radius: 8px; padding: 8px; cursor: pointer; text-align: left;"> ${v.photoData ?`<img src="${v.photoData}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 6px; margin-bottom: 6px;" />`:`<div style="background: ${TR_LIGHT}; height: 100px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; font-size: 32px;">📸</div>`} <div style="font-size: 11px; font-weight: 500;">${s ? s.name.split(' ').slice(0,3).join(' ') : '?'}</div> <div style="font-size: 10px; color: var(--color-text-tertiary);">${u ? u.name.split(' ')[0] : '?'} · ${formatRelative(v.endTime)}</div> </button> `;
+}).join(’’)}
+</div>
+`} </div> `;
+}
+
+function renderAdminManage() {
+return `<div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"> <div style="display: flex; align-items: center; gap: 6px;"> <i class="ti ti-users" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Zamestnanci (${state.users.filter(u=>u.role==='employee').length})</div> </div> <button data-action="add-user" style="background: ${TR}; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 500; cursor: pointer;"><i class="ti ti-plus" style="font-size: 12px;"></i> Pridať</button> </div> <div style="display: grid; gap: 4px;"> ${state.users.filter(u => u.role === 'employee').map(u =>`
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 6px;">
+<div style="width: 24px; height: 24px; border-radius: 50%; background: ${TR_LIGHT}; color: ${TR_DARK}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500;">${u.name.split(’ ‘).map(n=>n[0]).join(’’).slice(0,2)}</div>
+<div style="flex: 1;">
+<div style="font-size: 12px; font-weight: 500;">${u.name}</div>
+<div style="font-size: 10px; color: var(--color-text-tertiary);">PIN: ${u.pin}</div>
+</div>
+<button data-action="remove-user" data-user-id="${u.id}" style="background: transparent; border: none; color: ${TR}; cursor: pointer; padding: 4px;"><i class="ti ti-trash" style="font-size: 14px;"></i></button>
+</div>
+`).join('')} </div> </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"> <div style="display: flex; align-items: center; gap: 6px;"> <i class="ti ti-building-store" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Obchody (${state.stores.length})</div> </div> <button data-action="add-store" style="background: ${TR}; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 500; cursor: pointer;"><i class="ti ti-plus" style="font-size: 12px;"></i> Pridať</button> </div> <div style="display: grid; gap: 4px;"> ${state.stores.map(s => `
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 6px;">
+<i class="ti ti-map-pin" style="font-size: 14px; color: ${TR};"></i>
+<div style="flex: 1;">
+<div style="font-size: 12px; font-weight: 500;">${s.name}</div>
+<div style="font-size: 10px; color: var(--color-text-tertiary);">${s.address}</div>
+</div>
+<button data-action="remove-store-admin" data-store-id="${s.id}" style="background: transparent; border: none; color: ${TR}; cursor: pointer; padding: 4px;"><i class="ti ti-trash" style="font-size: 14px;"></i></button>
+</div>
+`).join('')} </div> </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;"> <div style="display: flex; align-items: center; gap: 6px;"> <i class="ti ti-package" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Produkty v checkliste (${state.products.length})</div> </div> <button data-action="add-product" style="background: ${TR}; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 500; cursor: pointer;"><i class="ti ti-plus" style="font-size: 12px;"></i> Pridať</button> </div> <div style="display: grid; gap: 4px;"> ${state.products.map((p, i) => `
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--color-background-secondary); border-radius: 6px;">
+<i class="ti ti-tag" style="font-size: 12px; color: ${TR};"></i>
+<div style="flex: 1; font-size: 12px;">${p}</div>
+<button data-action="remove-product" data-product-idx="${i}" style="background: transparent; border: none; color: ${TR}; cursor: pointer; padding: 4px;"><i class="ti ti-trash" style="font-size: 12px;"></i></button>
+</div>
+`).join('')} </div> </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;"> <i class="ti ti-settings" style="font-size: 16px; color: ${TR};"></i> <div style="font-weight: 500; font-size: 13px;">Nastavenia</div> </div> <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"> <label style="font-size: 12px; flex: 1;">GPS okruh okolo obchodu</label> <select data-action="change-radius" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-border-secondary); font-size: 12px;"> <option value="50" ${state.settings.gpsRadius===50?'selected':''}>50 m</option> <option value="100" ${state.settings.gpsRadius===100?'selected':''}>100 m</option> <option value="200" ${state.settings.gpsRadius===200?'selected':''}>200 m</option> <option value="500" ${state.settings.gpsRadius===500?'selected':''}>500 m</option> </select> </div> <label style="display: flex; align-items: center; gap: 10px; padding: 8px; background: var(--color-background-secondary); border-radius: 6px; cursor: pointer;"> <input type="checkbox" data-action="toggle-gps" ${state.settings.gpsEnabled ? 'checked' : ''} style="accent-color: ${TR};" /> <span style="font-size: 12px; flex: 1;">GPS overenie zapnuté</span> <span style="font-size: 10px; color: var(--color-text-tertiary);">${state.settings.gpsEnabled ? 'Vyžaduje polohu' : 'Vypnuté (demo)'}</span> </label> <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;"> <button data-action="export-data" style="padding: 8px; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); color: var(--color-text-primary); border-radius: 6px; font-size: 11px; cursor: pointer;"><i class="ti ti-download" style="font-size: 12px;"></i> Záloha JSON</button> <button data-action="import-data" style="padding: 8px; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); color: var(--color-text-primary); border-radius: 6px; font-size: 11px; cursor: pointer;"><i class="ti ti-upload" style="font-size: 12px;"></i> Obnoviť zálohu</button> </div> <input type="file" id="import-input" accept="application/json" style="display: none;" /> <button data-action="reset-data" style="width: 100%; margin-top: 8px; padding: 8px; background: var(--color-background-secondary); border: 1px solid ${TR}; color: ${TR}; border-radius: 6px; font-size: 11px; cursor: pointer;">Vymazať všetky návštevy</button> </div> `;
+}
+
+function getMemosForUser(userId) {
+const m = new Date().toISOString().slice(0,7);
+return state.memos.filter(memo => {
+if (memo.month !== m) return false;
+if (!memo.targetUsers || memo.targetUsers.length === 0) return true;
+return memo.targetUsers.includes(userId);
+});
+}
+
+function renderEmployee() {
+const userMemos = getMemosForUser(state.currentUser.id);
+const tabs = [
+{ id: ‘home’, icon: ‘home’, label: ‘Domov’ },
+{ id: ‘plan’, icon: ‘calendar’, label: ‘Plán’ },
+{ id: ‘memo’, icon: ‘speakerphone’, label: ‘Memo’, badge: userMemos.length },
+{ id: ‘stats’, icon: ‘chart-bar’, label: ‘Štatistiky’ },
+{ id: ‘history’, icon: ‘history’, label: ‘História’ }
+];
+return `${header(state.currentUser.name, false, '· MERCH')} ${tabBar(tabs, state.employeeTab, 'employee-tab')} <div style="padding: 16px;"> ${state.employeeTab === 'home' ? renderEmpHome() : ''} ${state.employeeTab === 'plan' ? renderEmpPlan() : ''} ${state.employeeTab === 'memo' ? renderEmpMemo() : ''} ${state.employeeTab === 'stats' ? renderEmpStats() : ''} ${state.employeeTab === 'history' ? renderEmpHistory() : ''} </div>`;
+}
+
+function renderEmpHome() {
+const userId = state.currentUser.id;
+const userVisits = state.visits.filter(v => v.userId === userId);
+const todayCount = userVisits.filter(v => isToday(v.endTime)).length;
+const weekCount = userVisits.filter(v => isThisWeek(v.endTime)).length;
+const totalMinutes = Math.round(userVisits.reduce((s,v) => s + v.duration, 0) / 60);
+const userPlan = state.plans[userId] || {};
+const dayNames = [‘Pondelok’,‘Utorok’,‘Streda’,‘Štvrtok’,‘Piatok’,‘Sobota’,‘Nedeľa’];
+const today = new Date().getDay() || 7;
+const todayStores = (userPlan[today] || []).map(sid => state.stores.find(s => s.id === sid)).filter(Boolean);
+const userMemos = getMemosForUser(userId);
+const highPriorityMemos = userMemos.filter(m => m.priority === ‘high’);
+
+```
+return `
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;">
+    ${statCard('Dnes', todayCount, 'návštev')}
+    ${statCard('Týždeň', weekCount, 'návštev')}
+    ${statCard('Čas', totalMinutes, 'minút')}
+  </div>
+
+  ${userMemos.length > 0 ? `
+    <button data-action="employee-tab" data-tab="memo" style="width: 100%; background: ${TR_LIGHT}; border: none; border-left: 3px solid ${TR}; border-radius: 10px; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 12px; margin-bottom: 12px; cursor: pointer; text-align: left;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <i class="ti ti-speakerphone" style="font-size: 16px; color: ${TR};"></i>
+        <div style="font-weight: 500; font-size: 12px; color: ${TR_DARK}; flex: 1;">Aktívne akcie pre teba · ${formatMonth(new Date().toISOString().slice(0,7))}</div>
+        <span style="background: ${TR}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 500;">${userMemos.length}</span>
+      </div>
+      <div style="font-size: 11px; color: ${TR_DARK};">
+        ${highPriorityMemos.length > 0 ? `<strong>${highPriorityMemos.length} s vysokou prioritou</strong> · ` : ''}
+        ${userMemos.slice(0,2).map(m => m.title).join(' · ')}${userMemos.length > 2 ? '...' : ''}
+      </div>
+    </button>
+  ` : ''}
+
+  <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+      <i class="ti ti-calendar-event" style="font-size: 16px; color: ${TR};"></i>
+      <div style="font-weight: 500; font-size: 13px;">Dnešný plán · ${dayNames[today-1]}</div>
+    </div>
+    ${todayStores.length === 0 ? `
+      <div style="text-align: center; padding: 20px; color: var(--color-text-tertiary); font-size: 12px;">Žiadne naplánované obchody.<br><button data-action="employee-tab" data-tab="plan" style="margin-top: 8px; background: ${TR}; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer;">Naplánovať týždeň</button></div>
+    ` : `
+      <div style="display: grid; gap: 6px;">
+        ${todayStores.map((s, i) => {
+          const visited = userVisits.some(v => v.storeId === s.id && isToday(v.endTime));
+          return `
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${visited ? 'var(--color-background-success)' : 'var(--color-background-secondary)'}; border-radius: 8px; border-left: 3px solid ${visited ? 'var(--color-text-success)' : TR}; border-top-left-radius: 0; border-bottom-left-radius: 0;">
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: ${visited ? 'var(--color-text-success)' : TR}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 11px;">${visited ? '✓' : i+1}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 500; font-size: 12px;">${s.name}</div>
+                <div style="font-size: 10px; color: var(--color-text-secondary);">${s.address}</div>
+              </div>
+              ${visited ? `<span style="font-size: 10px; color: var(--color-text-success); font-weight: 500;">Hotovo</span>` : `<button data-action="start-visit" data-store-id="${s.id}" style="background: ${TR}; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer;">Začať</button>`}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
+  </div>
+`;
+```
+
+}
+
+function renderEmpMemo() {
+const userId = state.currentUser.id;
+const userMemos = getMemosForUser(userId);
+const monthName = formatMonth(new Date().toISOString().slice(0,7));
+const pastMemos = state.memos.filter(m => {
+if (m.month >= new Date().toISOString().slice(0,7)) return false;
+if (!m.targetUsers || m.targetUsers.length === 0) return true;
+return m.targetUsers.includes(userId);
+}).slice(-5).reverse();
+
+```
+return `
+  <div style="background: ${TR}; color: white; border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+      <i class="ti ti-speakerphone" style="font-size: 18px;"></i>
+      <div style="font-weight: 500; font-size: 14px;">Akcie · ${monthName}</div>
+    </div>
+    <div style="font-size: 11px; opacity: 0.9;">${userMemos.length} aktívnych akcií od admina pre tento mesiac</div>
+  </div>
+
+  ${userMemos.length === 0 ? `
+    <div style="background: var(--color-background-primary); border-radius: 10px; padding: 24px; text-align: center; color: var(--color-text-tertiary); font-size: 12px;">
+      <i class="ti ti-clipboard-check" style="font-size: 32px; opacity: 0.3;"></i><br>
+      <div style="margin-top: 8px;">Žiadne aktívne akcie</div>
+    </div>
+  ` : `
+    <div style="display: grid; gap: 10px;">
+      ${userMemos.map(m => {
+        const priorityColor = m.priority === 'high' ? TR : m.priority === 'medium' ? '#EF9F27' : '#888780';
+        const priorityLabel = m.priority === 'high' ? 'Vysoká priorita' : m.priority === 'medium' ? 'Stredná priorita' : 'Nízka priorita';
+        const priorityBg = m.priority === 'high' ? TR_LIGHT : m.priority === 'medium' ? '#FAEEDA' : '#F1EFE8';
+        const priorityText = m.priority === 'high' ? TR_DARK : m.priority === 'medium' ? '#854F0B' : '#444441';
+        return `
+          <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; border-left: 4px solid ${priorityColor};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+              <div style="font-weight: 500; font-size: 14px; flex: 1;">${escapeHtml(m.title)}</div>
+              <span style="background: ${priorityBg}; color: ${priorityText}; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; white-space: nowrap;">${priorityLabel}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 10px; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(m.content)}</div>
+            ${m.relatedProducts && m.relatedProducts.length > 0 ? `
+              <div style="margin-bottom: 8px;">
+                <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 4px;">Súvisiace produkty:</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                  ${m.relatedProducts.map(p => `<span style="background: ${TR_LIGHT}; color: ${TR_DARK}; padding: 3px 8px; border-radius: 4px; font-size: 11px;"><i class="ti ti-package" style="font-size: 11px;"></i> ${p}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+            <div style="font-size: 10px; color: var(--color-text-tertiary); border-top: 0.5px solid var(--color-border-tertiary); padding-top: 6px; margin-top: 6px;">Pridané ${formatRelative(m.createdAt)} · admin</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `}
+
+  ${pastMemos.length > 0 ? `
+    <div style="margin-top: 16px; background: var(--color-background-primary); border-radius: 10px; padding: 14px;">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+        <i class="ti ti-history" style="font-size: 16px; color: var(--color-text-secondary);"></i>
+        <div style="font-weight: 500; font-size: 12px; color: var(--color-text-secondary);">Predchádzajúce akcie</div>
+      </div>
+      <div style="display: grid; gap: 6px;">
+        ${pastMemos.map(m => `
+          <div style="padding: 8px 10px; background: var(--color-background-secondary); border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; gap: 6px;">
+              <div style="font-size: 12px; font-weight: 500; flex: 1;">${escapeHtml(m.title)}</div>
+              <div style="font-size: 10px; color: var(--color-text-tertiary); white-space: nowrap;">${formatMonth(m.month)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : ''}
+`;
+```
+
+}
+
+function renderEmpPlan() {
+const userId = state.currentUser.id;
+const userPlan = state.plans[userId] || {};
+const dayNames = [‘Pondelok’,‘Utorok’,‘Streda’,‘Štvrtok’,‘Piatok’,‘Sobota’,‘Nedeľa’];
+const sel = state.selectedDay;
+const selStores = userPlan[sel] || [];
+return `<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 12px;"> ${dayNames.map((d, i) => { const dn = i+1, cnt = (userPlan[dn] || []).length, isSel = dn === sel; return`<button data-action="select-day" data-day="${dn}" style="text-align: center; padding: 8px 2px; background: ${isSel ? TR : 'var(--color-background-primary)'}; color: ${isSel ? 'white' : 'var(--color-text-primary)'}; border: 0.5px solid ${isSel ? TR : 'var(--color-border-tertiary)'}; border-radius: 6px; cursor: pointer;"><div style="font-size: 9px; opacity: 0.85; text-transform: uppercase;">${d.slice(0,2)}</div><div style="font-size: 14px; font-weight: 500;">${cnt}</div></button>`; }).join('')} </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">${dayNames[sel-1]} · ${selStores.length} obchodov</div> ${selStores.length === 0 ? `<div style="text-align: center; padding: 12px; color: var(--color-text-tertiary); font-size: 11px;">Žiadne obchody. Pridaj nižšie.</div>`:`
+<div style="display: grid; gap: 5px;">
+${selStores.map((sid, i) => {
+const s = state.stores.find(x => x.id === sid);
+if (!s) return ‘’;
+return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--color-background-secondary); border-radius: 6px;"> <div style="display: flex; flex-direction: column; gap: 2px;"> <button data-action="move-up" data-index="${i}" ${i===0?'disabled':''} style="background: transparent; border: none; color: ${i===0?'var(--color-text-tertiary)':TR}; cursor: ${i===0?'default':'pointer'}; padding: 0;"><i class="ti ti-chevron-up" style="font-size: 14px;"></i></button> <button data-action="move-down" data-index="${i}" ${i===selStores.length-1?'disabled':''} style="background: transparent; border: none; color: ${i===selStores.length-1?'var(--color-text-tertiary)':TR}; cursor: ${i===selStores.length-1?'default':'pointer'}; padding: 0;"><i class="ti ti-chevron-down" style="font-size: 14px;"></i></button> </div> <div style="width: 22px; height: 22px; border-radius: 50%; background: ${TR}; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500;">${i+1}</div> <div style="flex: 1; font-size: 11px; font-weight: 500;">${s.name}</div> <button data-action="remove-store" data-store-id="${s.id}" style="background: transparent; border: none; color: ${TR}; cursor: pointer; padding: 2px;"><i class="ti ti-x" style="font-size: 14px;"></i></button> </div>`;
+}).join(’’)}
+</div>
+`} </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Pridať obchod</div> <div style="display: grid; gap: 5px;"> ${state.stores.filter(s => !selStores.includes(s.id)).map(s => `
+<button data-action="add-store-plan" data-store-id="${s.id}" style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; cursor: pointer; text-align: left;">
+<i class="ti ti-plus" style="font-size: 14px; color: ${TR};"></i>
+<div style="flex: 1;"><div style="font-size: 11px; font-weight: 500;">${s.name}</div><div style="font-size: 9px; color: var(--color-text-tertiary);">${s.address}</div></div>
+</button>
+`).join('')} ${state.stores.filter(s => !selStores.includes(s.id)).length === 0 ? `<div style="text-align: center; padding: 10px; color: var(--color-text-tertiary); font-size: 11px;">Všetky obchody sú už pridané.</div>`: ''} </div> </div>`;
+}
+
+function renderEmpStats() {
+const userId = state.currentUser.id;
+const userVisits = state.visits.filter(v => v.userId === userId);
+const totalProductsFound = userVisits.reduce((s,v) => s + (v.checklist ? Object.values(v.checklist).filter(x=>x).length : 0), 0);
+const totalProductsChecked = userVisits.reduce((s,v) => s + (v.checklist ? Object.keys(v.checklist).length : 0), 0);
+const rate = totalProductsChecked > 0 ? Math.round(totalProductsFound/totalProductsChecked*100) : 0;
+const avgDuration = userVisits.length > 0 ? Math.round(userVisits.reduce((s,v)=>s+v.duration,0)/userVisits.length/60) : 0;
+return `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;"> ${statCard('Celkom návštev', userVisits.length, '')} ${statCard('Priemerný čas', avgDuration, 'minút')} ${statCard('Produkty na regáli', rate + '%', '')} ${statCard('S fotkou', userVisits.filter(v=>v.photo).length, 'návštev')} </div> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Moje návštevy za 7 dní</div> <div style="position: relative; height: 180px;"><canvas id="emp-chart" role="img" aria-label="Graf návštev"></canvas></div> </div>`;
+}
+
+function renderEmpHistory() {
+const userId = state.currentUser.id;
+const userVisits = state.visits.filter(v => v.userId === userId).slice().reverse();
+return `<div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Všetky moje návštevy (${userVisits.length})</div> ${userVisits.length === 0 ?`<div style="text-align: center; padding: 20px; color: var(--color-text-tertiary); font-size: 12px;">Zatiaľ žiadne návštevy.</div>`:`
+<div style="display: grid; gap: 5px;">
+${userVisits.map(v => {
+const s = state.stores.find(x => x.id === v.storeId);
+const found = v.checklist ? Object.values(v.checklist).filter(x=>x).length : 0;
+const total = v.checklist ? Object.keys(v.checklist).length : 0;
+return `<button data-action="view-visit" data-visit-id="${v.id}" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--color-background-secondary); border-radius: 6px; border: none; cursor: pointer; text-align: left; width: 100%;"> <i class="ti ti-circle-check" style="font-size: 16px; color: var(--color-text-success);"></i> <div style="flex: 1; min-width: 0;"><div style="font-size: 12px; font-weight: 500;">${s ? s.name : '?'}</div><div style="font-size: 10px; color: var(--color-text-tertiary);">${formatRelative(v.endTime)} · ${Math.round(v.duration/60)} min · ${found}/${total} produktov ${v.photo ? '· 📸' : ''}</div></div> <i class="ti ti-chevron-right" style="font-size: 14px; color: var(--color-text-tertiary);"></i> </button>`;
+}).join(’’)}
+</div>
+`} </div> `;
+}
+
+function renderVisitDetail() {
+const v = state.visits.find(x => x.id === state.viewingVisitId);
+if (!v) return ‘<div>Nenájdené</div>’;
+const u = state.users.find(x => x.id === v.userId);
+const s = state.stores.find(x => x.id === v.storeId);
+const found = v.checklist ? Object.entries(v.checklist).filter(([k,val]) => val).map(([k])=>k) : [];
+const notFound = v.checklist ? Object.entries(v.checklist).filter(([k,val]) => !val).map(([k])=>k) : [];
+return `${header('Detail návštevy', true)} <div style="padding: 16px;"> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;"> <div style="font-weight: 500; font-size: 14px; margin-bottom: 2px;">${s ? s.name : '?'}</div> <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px;">${s ? s.address : ''}</div> <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 11px;"> <div><span style="color: var(--color-text-secondary);">Zamestnanec:</span> <strong>${u ? u.name : '?'}</strong></div> <div><span style="color: var(--color-text-secondary);">Trvanie:</span> <strong>${Math.round(v.duration/60)} min</strong></div> <div><span style="color: var(--color-text-secondary);">Začiatok:</span> <strong>${new Date(v.startTime).toLocaleString('sk-SK')}</strong></div> <div><span style="color: var(--color-text-secondary);">Koniec:</span> <strong>${new Date(v.endTime).toLocaleString('sk-SK')}</strong></div> </div> </div> ${v.photo ?`
+<div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+<div style="font-weight: 500; font-size: 13px; margin-bottom: 8px;"><i class="ti ti-camera" style="font-size: 14px; color: ${TR};"></i> Fotka regálu</div>
+${v.photoData ? `<img src="${v.photoData}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; background: black;" />` : `<div style="background: ${TR_LIGHT}; height: 150px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 48px;">📸</div>`}
+</div>
+`: ''} <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px;"> <div style="font-weight: 500; font-size: 13px; margin-bottom: 10px;">Checklist produktov</div> ${found.length > 0 ?`<div style="font-size: 11px; color: var(--color-text-success); margin-bottom: 4px;">Na regáli (${found.length}):</div><div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">${found.map(p => `<span style="background: var(--color-background-success); color: var(--color-text-success); padding: 4px 8px; border-radius: 4px; font-size: 11px;"><i class="ti ti-check" style="font-size: 11px;"></i> ${p}</span>`).join(’’)}</div>`: ''} ${notFound.length > 0 ?`<div style="font-size: 11px; color: ${TR}; margin-bottom: 4px;">Chýba (${notFound.length}):</div><div style="display: flex; flex-wrap: wrap; gap: 4px;">${notFound.map(p => `<span style="background: ${TR_LIGHT}; color: ${TR_DARK}; padding: 4px 8px; border-radius: 4px; font-size: 11px;"><i class="ti ti-x" style="font-size: 11px;"></i> ${p}</span>`).join(’’)}</div>`: ''} </div> </div>`;
+}
+
+function renderVisit() {
+const visit = state.activeVisit;
+if (!visit) return ‘<div>Chyba</div>’;
+const store = state.stores.find(s => s.id === visit.storeId);
+if (visit.stage === ‘gps’) {
+return `${header('Overenie polohy', true)} <div style="padding: 24px 20px;"> <div style="background: var(--color-background-primary); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 12px;"> <div style="font-size: 40px; margin-bottom: 10px;">📍</div> <div style="font-weight: 500; font-size: 14px; margin-bottom: 2px;">${store.name}</div> <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 14px;">${store.address}</div> <div id="gps-status" style="padding: 12px; background: var(--color-background-secondary); border-radius: 8px; font-size: 12px;"><i class="ti ti-loader"></i> Kontrolujem polohu...</div> <div id="gps-detail" style="font-size: 10px; color: var(--color-text-tertiary); margin-top: 8px;"></div> </div> <div style="font-size: 11px; color: var(--color-text-tertiary); text-align: center;">${state.settings.gpsEnabled ?`Pre začatie návštevy musíš byť do ${state.settings.gpsRadius}m od obchodu`: 'GPS overenie je vypnuté (demo režim)'}</div> </div>`;
+}
+if (visit.stage === ‘checklist’) {
+const elapsed = Math.round((Date.now() - visit.startTime) / 1000);
+const mins = Math.floor(elapsed / 60);
+const secs = elapsed % 60;
+const relatedMemos = getMemosForUser(state.currentUser.id);
+return `
+${header(‘Návšteva prebieha’, false)}
+<div style="padding: 16px;">
+<div style="background: ${TR}; color: white; border-radius: 10px; padding: 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+<div style="min-width: 0;"><div style="font-size: 10px; opacity: 0.85;">Aktívna návšteva</div><div style="font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${store.name}</div></div>
+<div style="font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums;" id="visit-timer">${String(mins).padStart(2,‘0’)}:${String(secs).padStart(2,‘0’)}</div>
+</div>
+
+```
+      ${relatedMemos.length > 0 ? `
+        <div style="background: ${TR_LIGHT}; border-radius: 10px; padding: 10px; margin-bottom: 12px; border-left: 3px solid ${TR}; border-top-left-radius: 0; border-bottom-left-radius: 0;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: ${TR_DARK};">
+            <i class="ti ti-speakerphone" style="font-size: 13px;"></i>
+            <div style="font-weight: 500; font-size: 11px;">Pripomienka · aktívne akcie</div>
+          </div>
+          <div style="font-size: 11px; color: ${TR_DARK};">${relatedMemos.map(m => m.title).join(' · ')}</div>
+        </div>
+      ` : ''}
+
+      <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+        <div style="font-weight: 500; font-size: 13px; margin-bottom: 2px;">Checklist produktov</div>
+        <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 10px;">Označ produkty, ktoré sú na regáli</div>
+        <div style="display: grid; gap: 5px;">
+          ${state.products.map(p => {
+            const checked = visit.checklist && visit.checklist[p];
+            return `<label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${checked ? TR_LIGHT : 'var(--color-background-secondary)'}; border-radius: 6px; cursor: pointer; border: 1px solid ${checked ? TR : 'transparent'};"><input type="checkbox" data-action="toggle-product" data-product="${p}" ${checked ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: ${TR}; cursor: pointer;" /><span style="font-size: 12px; font-weight: ${checked ? 500 : 400}; color: ${checked ? TR_DARK : 'var(--color-text-primary)'};">${p}</span></label>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div style="background: var(--color-background-primary); border-radius: 10px; padding: 14px; margin-bottom: 12px;">
+        <div style="font-weight: 500; font-size: 13px; margin-bottom: 2px;">Fotka regálu</div>
+        <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 10px;">Pridaj fotku s našimi produktmi</div>
+        ${visit.photoData ? `
+          <div style="position: relative;">
+            <img src="${visit.photoData}" style="width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; background: black;" />
+            <button data-action="remove-photo" style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;"><i class="ti ti-x"></i></button>
+          </div>
+        ` : `
+          <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;" />
+          <button data-action="trigger-photo" style="width: 100%; padding: 24px; background: var(--color-background-secondary); border: 2px dashed var(--color-border-secondary); border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <i class="ti ti-camera" style="font-size: 28px; color: ${TR};"></i>
+            <span style="font-size: 12px; color: var(--color-text-secondary);">Klikni pre fotku</span>
+            <span style="font-size: 10px; color: var(--color-text-tertiary);">Otvorí kameru telefónu</span>
+          </button>
+        `}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
+        <button data-action="cancel-visit" style="padding: 14px; background: var(--color-background-secondary); color: var(--color-text-secondary); border: 1px solid var(--color-border-secondary); border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 12px;">Zrušiť</button>
+        <button data-action="finish-visit" style="padding: 14px; background: ${TR}; color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; font-size: 13px;">Ukončiť návštevu</button>
+      </div>
+    </div>
+  `;
+}
+return '';
+```
+
+}
+
+function statCard(label, value, unit) {
+return `<div style="background: var(--color-background-primary); border-radius: 8px; padding: 10px 6px; text-align: center;"><div style="font-size: 9px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">${label}</div><div style="font-size: 20px; font-weight: 500; color: ${TR}; margin: 2px 0;">${value}</div>${unit ? `<div style="font-size: 9px; color: var(--color-text-tertiary);">${unit}</div>` : ''}</div>`;
+}
+
+function getMonthOptions(includeFuture) {
+const months = [];
+const now = new Date();
+const start = includeFuture ? 0 : -2;
+const end = includeFuture ? 12 : 1;
+for (let i = end; i >= start; i–) {
+const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+const value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+months.push({ value, label: formatMonth(value) });
+}
+return months;
+}
+
+function formatMonth(monthStr) {
+const [y, m] = monthStr.split(’-’);
+const d = new Date(parseInt(y), parseInt(m)-1, 1);
+return d.toLocaleDateString(‘sk-SK’, { month: ‘long’, year: ‘numeric’ });
+}
+
+function escapeHtml(s) {
+return String(s || ‘’).replace(/[&<>”’]/g, c => ({ ‘&’: ‘&’, ‘<’: ‘<’, ‘>’: ‘>’, ‘”’: ‘"’, “’”: ‘'’ }[c]));
+}
+function escapeAttr(s) {
+return String(s || ‘’).replace(/”/g, ‘"’);
+}
+
+let timerInterval = null;
+
+function attachHandlers() {
+document.querySelectorAll(’[data-action]’).forEach(el => {
+if (el.tagName === ‘INPUT’ && (el.type === ‘checkbox’ || el.type === ‘file’)) el.addEventListener(‘change’, handleAction);
+else if (el.tagName === ‘SELECT’) el.addEventListener(‘change’, handleAction);
+else el.addEventListener(‘click’, handleAction);
+});
+const pinInput = document.getElementById(‘pin-input’);
+if (pinInput) {
+pinInput.addEventListener(‘keypress’, e => {
+if (e.key === ‘Enter’) { const btn = document.querySelector(’[data-action=“submit-pin”]’); if (btn) btn.click(); }
+});
+}
+const importInput = document.getElementById(‘import-input’);
+if (importInput) importInput.addEventListener(‘change’, handleImport);
+if (state.currentScreen === ‘visit’ && state.activeVisit && state.activeVisit.stage === ‘gps’) setTimeout(() => doGPSCheck(), 600);
+if (state.currentScreen === ‘visit’ && state.activeVisit && state.activeVisit.stage === ‘checklist’) {
+if (timerInterval) clearInterval(timerInterval);
+timerInterval = setInterval(updateTimer, 1000);
+} else if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function updateTimer() {
+const el = document.getElementById(‘visit-timer’);
+if (!el || !state.activeVisit) return;
+const elapsed = Math.round((Date.now() - state.activeVisit.startTime) / 1000);
+el.textContent = `${String(Math.floor(elapsed/60)).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')}`;
+}
+
+function distance(lat1, lng1, lat2, lng2) {
+const R = 6371000;
+const dLat = (lat2-lat1) * Math.PI/180, dLng = (lng2-lng1) * Math.PI/180;
+const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function doGPSCheck() {
+const statusEl = document.getElementById(‘gps-status’);
+const detailEl = document.getElementById(‘gps-detail’);
+if (!statusEl) return;
+const store = state.stores.find(s => s.id === state.activeVisit.storeId);
+if (!state.settings.gpsEnabled) {
+statusEl.style.background = ‘var(–color-background-success)’;
+statusEl.style.color = ‘var(–color-text-success)’;
+statusEl.innerHTML = `<i class="ti ti-check"></i> GPS vypnuté · pokračujem`;
+setTimeout(proceedToChecklist, 800); return;
+}
+if (!navigator.geolocation) {
+statusEl.innerHTML = `<i class="ti ti-alert-triangle"></i> GPS nedostupné`;
+setTimeout(proceedToChecklist, 1000); return;
+}
+statusEl.innerHTML = `<i class="ti ti-loader"></i> Žiadam o povolenie polohy...`;
+navigator.geolocation.getCurrentPosition(pos => {
+const d = distance(pos.coords.latitude, pos.coords.longitude, store.lat, store.lng);
+if (detailEl) detailEl.textContent = `Vzdialenosť ${Math.round(d)}m`;
+if (d <= state.settings.gpsRadius) {
+statusEl.style.background = ‘var(–color-background-success)’;
+statusEl.style.color = ‘var(–color-text-success)’;
+statusEl.innerHTML = `<i class="ti ti-check"></i> Si v okruhu ${state.settings.gpsRadius}m`;
+setTimeout(proceedToChecklist, 1200);
+} else {
+statusEl.style.background = ‘var(–color-background-danger)’;
+statusEl.style.color = ‘var(–color-text-danger)’;
+statusEl.innerHTML = `<i class="ti ti-x"></i> Príliš ďaleko · ${Math.round(d/1000*10)/10} km`;
+if (detailEl) detailEl.innerHTML += ‘<br><button data-action="force-visit" style="margin-top: 6px; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">Pokračovať aj tak</button>’;
+const forceBtn = document.querySelector(’[data-action=“force-visit”]’);
+if (forceBtn) forceBtn.addEventListener(‘click’, proceedToChecklist);
+}
+}, err => {
+statusEl.innerHTML = `<i class="ti ti-alert-triangle"></i> Poloha zamietnutá`;
+if (detailEl) detailEl.innerHTML = err.message + ‘<br><button data-action="force-visit" style="margin-top: 6px; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;">Pokračovať aj tak</button>’;
+const forceBtn = document.querySelector(’[data-action=“force-visit”]’);
+if (forceBtn) forceBtn.addEventListener(‘click’, proceedToChecklist);
+}, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+function proceedToChecklist() {
+state.activeVisit.stage = ‘checklist’;
+state.activeVisit.startTime = Date.now();
+state.activeVisit.checklist = {};
+render();
+}
+
+function resizeImage(dataUrl, maxWidth, quality) {
+return new Promise(resolve => {
+const img = new Image();
+img.onload = () => {
+const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
+const w = Math.round(img.width * ratio);
+const h = Math.round(img.height * ratio);
+const canvas = document.createElement(‘canvas’);
+canvas.width = w; canvas.height = h;
+const ctx = canvas.getContext(‘2d’);
+ctx.drawImage(img, 0, 0, w, h);
+resolve(canvas.toDataURL(‘image/jpeg’, quality));
+};
+img.src = dataUrl;
+});
+}
+
+function exportCSV() {
+const headers = [‘Dátum’, ‘Zamestnanec’, ‘Obchod’, ‘Trvanie (min)’, ‘Produktov nájdených’, ‘Produktov celkom’, ‘Fotka’];
+const rows = state.visits.map(v => {
+const u = state.users.find(x => x.id === v.userId);
+const s = state.stores.find(x => x.id === v.storeId);
+const found = v.checklist ? Object.values(v.checklist).filter(x=>x).length : 0;
+const total = v.checklist ? Object.keys(v.checklist).length : 0;
+return [new Date(v.endTime).toLocaleString(‘sk-SK’), u ? u.name : ‘?’, s ? s.name : ‘?’, Math.round(v.duration/60), found, total, v.photo ? ‘Áno’ : ‘Nie’];
+});
+const csv = [headers, …rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(’,’)).join(’\n’);
+const blob = new Blob([’\uFEFF’ + csv], { type: ‘text/csv;charset=utf-8’ });
+downloadBlob(blob, `tatrakon-navstevy-${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportBackup() {
+const data = { plans: state.plans, visits: state.visits, stores: state.stores, users: state.users, products: state.products, settings: state.settings, memos: state.memos, exportedAt: new Date().toISOString() };
+const blob = new Blob([JSON.stringify(data, null, 2)], { type: ‘application/json’ });
+downloadBlob(blob, `tatrakon-zaloha-${new Date().toISOString().slice(0,10)}.json`);
+}
+
+function downloadBlob(blob, filename) {
+const url = URL.createObjectURL(blob);
+const a = document.createElement(‘a’);
+a.href = url; a.download = filename;
+document.body.appendChild(a); a.click(); document.body.removeChild(a);
+setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function handleImport(e) {
+const file = e.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = ev => {
+try {
+const data = JSON.parse(ev.target.result);
+if (!confirm(‘Naozaj nahradiť všetky aktuálne dáta zo zálohy? Toto sa nedá vrátiť späť.’)) return;
+Object.assign(state, {
+plans: data.plans || {}, visits: data.visits || [], stores: data.stores || […DEFAULT_STORES],
+users: data.users || […DEFAULT_USERS], products: data.products || […DEFAULT_PRODUCTS],
+settings: data.settings || { gpsRadius: 100, gpsEnabled: true }, memos: data.memos || []
+});
+saveState(); render();
+alert(‘Záloha bola úspešne obnovená.’);
+} catch (err) { alert(’Chyba pri čítaní zálohy: ’ + err.message); }
+};
+reader.readAsText(file);
+}
+
+async function handleAction(e) {
+const el = e.currentTarget;
+const action = el.dataset.action;
+
+```
+if (action === 'select-user') {
+  state.pinSelectedUser = state.users.find(u => u.id === el.dataset.userId);
+  document.getElementById('pin-section').style.display = 'block';
+  document.getElementById('pin-user-name').textContent = state.pinSelectedUser.name;
+  document.getElementById('pin-input').focus();
+}
+if (action === 'submit-pin') {
+  const input = document.getElementById('pin-input').value;
+  if (input === state.pinSelectedUser.pin) {
+    state.currentUser = state.pinSelectedUser;
+    state.currentScreen = state.pinSelectedUser.role === 'admin' ? 'admin' : 'employee';
+    state.adminTab = 'overview'; state.employeeTab = 'home';
+    render();
+  } else document.getElementById('pin-error').textContent = 'Nesprávny PIN';
+}
+if (action === 'logout') { state.currentUser = null; state.activeVisit = null; state.currentScreen = 'login'; state.pinSelectedUser = null; render(); }
+if (action === 'back') {
+  if (state.currentScreen === 'visit-detail') state.currentScreen = state.currentUser.role === 'admin' ? 'admin' : 'employee';
+  else if (state.currentScreen === 'visit') { state.activeVisit = null; state.currentScreen = 'employee'; }
+  else if (state.currentScreen === 'memo-editor') { state.currentScreen = 'admin'; state.adminTab = 'memo'; state.editingMemoId = null; }
+  render();
+}
+if (action === 'admin-tab') { state.adminTab = el.dataset.tab; render(); }
+if (action === 'employee-tab') { state.employeeTab = el.dataset.tab; render(); }
+if (action === 'select-day') { state.selectedDay = parseInt(el.dataset.day); render(); }
+if (action === 'select-month') { state.selectedMonth = el.value; render(); }
+
+if (action === 'new-memo') { state.editingMemoId = null; state.currentScreen = 'memo-editor'; render(); }
+if (action === 'edit-memo') { state.editingMemoId = el.dataset.memoId; state.currentScreen = 'memo-editor'; render(); }
+if (action === 'delete-memo') {
+  if (!confirm('Naozaj vymazať túto akciu?')) return;
+  state.memos = state.memos.filter(m => m.id !== el.dataset.memoId);
+  saveState(); render();
+}
+if (action === 'cancel-memo') { state.currentScreen = 'admin'; state.adminTab = 'memo'; state.editingMemoId = null; render(); }
+if (action === 'save-memo') {
+  const title = document.getElementById('memo-title').value.trim();
+  const content = document.getElementById('memo-content').value.trim();
+  const month = document.getElementById('memo-month').value;
+  const priority = document.getElementById('memo-priority').value;
+  const targetUsers = Array.from(document.querySelectorAll('.memo-user:checked')).map(x => x.dataset.userId);
+  const relatedProducts = Array.from(document.querySelectorAll('.memo-product:checked')).map(x => x.dataset.product);
+  if (!title) { alert('Zadaj názov akcie'); return; }
+  if (!content) { alert('Zadaj popis akcie'); return; }
+  if (state.editingMemoId) {
+    const memo = state.memos.find(m => m.id === state.editingMemoId);
+    if (memo) Object.assign(memo, { title, content, month, priority, targetUsers, relatedProducts });
+  } else {
+    state.memos.push({ id: 'm' + Date.now(), title, content, month, priority, targetUsers, relatedProducts, createdAt: Date.now() });
+  }
+  saveState();
+  state.currentScreen = 'admin'; state.adminTab = 'memo'; state.editingMemoId = null;
+  state.selectedMonth = month;
+  render();
+}
+
+if (action === 'add-store-plan') {
+  const uid = state.currentUser.id;
+  if (!state.plans[uid]) state.plans[uid] = {};
+  if (!state.plans[uid][state.selectedDay]) state.plans[uid][state.selectedDay] = [];
+  state.plans[uid][state.selectedDay].push(el.dataset.storeId);
+  saveState(); render();
+}
+if (action === 'remove-store') {
+  const uid = state.currentUser.id;
+  state.plans[uid][state.selectedDay] = state.plans[uid][state.selectedDay].filter(x => x !== el.dataset.storeId);
+  saveState(); render();
+}
+if (action === 'move-up' || action === 'move-down') {
+  const uid = state.currentUser.id;
+  const arr = state.plans[uid][state.selectedDay];
+  const i = parseInt(el.dataset.index);
+  const j = action === 'move-up' ? i-1 : i+1;
+  if (j >= 0 && j < arr.length) { [arr[i], arr[j]] = [arr[j], arr[i]]; saveState(); render(); }
+}
+
+if (action === 'start-visit') {
+  state.activeVisit = { storeId: el.dataset.storeId, stage: 'gps', startTime: null, checklist: {}, photo: false, photoData: null };
+  state.currentScreen = 'visit'; render();
+}
+if (action === 'toggle-product') {
+  const p = el.dataset.product;
+  if (!state.activeVisit.checklist) state.activeVisit.checklist = {};
+  state.activeVisit.checklist[p] = el.checked;
+}
+if (action === 'trigger-photo') { const input = document.getElementById('photo-input'); if (input) input.click(); }
+if (action === 'change-radius') { state.settings.gpsRadius = parseInt(el.value); saveState(); }
+if (action === 'toggle-gps') { state.settings.gpsEnabled = el.checked; saveState(); render(); }
+
+if (el.type === 'file' && el.id === 'photo-input') {
+  const file = el.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      const resized = await resizeImage(ev.target.result, 1200, 0.7);
+      state.activeVisit.photoData = resized;
+      state.activeVisit.photo = true;
+      render();
+    };
+    reader.readAsDataURL(file);
+  }
+}
+if (action === 'remove-photo') { state.activeVisit.photo = false; state.activeVisit.photoData = null; render(); }
+if (action === 'cancel-visit') {
+  if (!confirm('Naozaj zrušiť túto návštevu? Dáta sa neuložia.')) return;
+  state.activeVisit = null; state.currentScreen = 'employee'; render();
+}
+if (action === 'finish-visit') {
+  const duration = Math.round((Date.now() - state.activeVisit.startTime) / 1000);
+  state.visits.push({
+    id: 'v' + Date.now(), userId: state.currentUser.id, storeId: state.activeVisit.storeId,
+    startTime: state.activeVisit.startTime, endTime: Date.now(),
+    duration: Math.max(duration, 5), checklist: state.activeVisit.checklist || {},
+    photo: state.activeVisit.photo, photoData: state.activeVisit.photoData || null
+  });
+  saveState();
+  state.activeVisit = null; state.currentScreen = 'employee'; render();
+}
+if (action === 'view-visit') { state.viewingVisitId = el.dataset.visitId; state.currentScreen = 'visit-detail'; render(); }
+if (action === 'export-csv') exportCSV();
+if (action === 'export-data') exportBackup();
+if (action === 'import-data') { document.getElementById('import-input').click(); }
+
+if (action === 'add-user') {
+  const name = prompt('Meno nového zamestnanca:'); if (!name) return;
+  const pin = prompt('PIN (4 číslice):');
+  if (!pin || !/^\d{4}$/.test(pin)) { alert('PIN musí byť 4 číslice'); return; }
+  if (state.users.some(u => u.pin === pin)) { alert('Tento PIN už existuje, vyber iný.'); return; }
+  state.users.push({ id: 'u' + Date.now(), name, pin, role: 'employee' });
+  saveState(); render();
+}
+if (action === 'remove-user') {
+  if (!confirm('Naozaj odstrániť tohto zamestnanca?')) return;
+  state.users = state.users.filter(u => u.id !== el.dataset.userId);
+  saveState(); render();
+}
+if (action === 'add-store') {
+  const name = prompt('Názov obchodu:'); if (!name) return;
+  const address = prompt('Adresa:') || '';
+  const latStr = prompt('Latitude (napr. 49.4081):'); 
+  const lngStr = prompt('Longitude (napr. 19.4811):');
+  const lat = parseFloat(latStr); const lng = parseFloat(lngStr);
+  if (isNaN(lat) || isNaN(lng)) { alert('Nesprávne GPS súradnice'); return; }
+  state.stores.push({ id: 's' + Date.now(), name, address, lat, lng });
+  saveState(); render();
+}
+if (action === 'remove-store-admin') {
+  if (!confirm('Naozaj odstrániť tento obchod?')) return;
+  state.stores = state.stores.filter(s => s.id !== el.dataset.storeId);
+  saveState(); render();
+}
+if (action === 'add-product') {
+  const p = prompt('Názov produktu:'); if (!p) return;
+  state.products.push(p); saveState(); render();
+}
+if (action === 'remove-product') { state.products.splice(parseInt(el.dataset.productIdx), 1); saveState(); render(); }
+if (action === 'reset-data') {
+  if (!confirm('Naozaj vymazať VŠETKY návštevy? Toto sa nedá vrátiť späť.')) return;
+  state.visits = []; saveState(); render();
+}
+```
+
+}
+
+function get7DayLabels() {
+const labels = []; const dayShorts = [‘Ne’,‘Po’,‘Ut’,‘St’,‘Št’,‘Pi’,‘So’];
+for (let i = 6; i >= 0; i–) { const d = new Date(); d.setDate(d.getDate() - i); labels.push(dayShorts[d.getDay()]); }
+return labels;
+}
+function get7DayCounts(filterFn) {
+const counts = new Array(7).fill(0);
+state.visits.forEach(v => {
+if (filterFn && !filterFn(v)) return;
+const days = Math.floor((Date.now() - v.endTime) / (24*60*60*1000));
+if (days >= 0 && days < 7) counts[6-days]++;
+});
+return counts;
+}
+function drawAdminChart() {
+const canvas = document.getElementById(‘admin-chart’);
+if (!canvas || !window.Chart) return;
+const employees = state.users.filter(u => u.role === ‘employee’);
+const colors = [’#D32027’,’#1D9E75’,’#185FA5’,’#EF9F27’,’#7F77DD’,’#D85A30’,’#D4537E’];
+state.chartInstance = new Chart(canvas, {
+type: ‘bar’,
+data: { labels: get7DayLabels(), datasets: employees.map((u, i) => ({ label: u.name, data: get7DayCounts(v => v.userId === u.id), backgroundColor: colors[i % colors.length] })) },
+options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { position: ‘bottom’, labels: { font: { size: 10 }, boxWidth: 10 } } } }
+});
+}
+function drawEmployeeChart() {
+const canvas = document.getElementById(‘emp-chart’);
+if (!canvas || !window.Chart) return;
+const uid = state.currentUser.id;
+state.chartInstance = new Chart(canvas, {
+type: ‘bar’,
+data: { labels: get7DayLabels(), datasets: [{ label: ‘Návštevy’, data: get7DayCounts(v => v.userId === uid), backgroundColor: TR }] },
+options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+});
+}
+function isToday(ts) { if (!ts) return false; return new Date(ts).toDateString() === new Date().toDateString(); }
+function isThisWeek(ts) {
+if (!ts) return false;
+const d = new Date(ts), now = new Date(), weekStart = new Date(now);
+const day = weekStart.getDay() || 7;
+weekStart.setDate(weekStart.getDate() - day + 1); weekStart.setHours(0,0,0,0);
+return d >= weekStart;
+}
+function formatRelative(ts) {
+if (!ts) return ‘?’;
+const diff = Date.now() - ts, mins = Math.round(diff / 60000);
+if (mins < 1) return ‘teraz’;
+if (mins < 60) return `${mins} min`;
+const hours = Math.round(mins/60);
+if (hours < 24) return `${hours} h`;
+const days = Math.round(hours/24);
+if (days < 7) return `${days} d`;
+return new Date(ts).toLocaleDateString(‘sk-SK’);
+}
+
+loadState();
+render();
+})();
+</script>
+
+</body>
+</html>
